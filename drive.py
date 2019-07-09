@@ -3,7 +3,7 @@ import base64
 from datetime import datetime
 import os
 import shutil
-
+import cv2
 import numpy as np
 import socketio
 import eventlet
@@ -60,7 +60,16 @@ def telemetry(sid, data):
         # The current image from the center camera of the car
         imgString = data["image"]
         image = Image.open(BytesIO(base64.b64decode(imgString)))
+       
         image_array = np.asarray(image)
+        #modify image to match model
+        crop_image = image_array[60:135,:,:]
+       
+        #resize image to match size in nVidia paper 
+        resize_image =  cv2.resize(crop_image,(200,66))
+        #convert from BGR to YUV as outlined in nVidia paper
+        image_array = cv2.cvtColor(resize_image, cv2.COLOR_RGB2YUV)
+        
         steering_angle = float(model.predict(image_array[None, :, :, :], batch_size=1))
 
         throttle = controller.update(float(speed))
